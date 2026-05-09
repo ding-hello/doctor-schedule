@@ -220,7 +220,8 @@
         { id: 11, name: '林乾顶', rank: '主治' }, { id: 12, name: '陈新新', rank: '主治' },
         { id: 13, name: '郑若娟', rank: '主治' }, { id: 14, name: '缪正锁', rank: '主治' },
         { id: 15, name: '翁哲', rank: '住院' }, { id: 16, name: '杨盛博', rank: '住院' },
-        { id: 17, name: '王梅彬', rank: '住院' }, { id: 18, name: '林依帆', rank: '住院' }，
+        { id: 17, name: '王梅彬', rank: '住院' }, { id: 18, name: '林依帆', rank: '住院' },
+        { id: 19, name: '李锡晨', rank: '住院' }, { id: 20, name: '尤婷婷', rank: '住院' }
     ];
 
     const DEFAULT_GROUPS = [
@@ -291,7 +292,6 @@
     }
 
     function render() {
-        // 渲染待分配池
         const pool = document.getElementById('doctor-pool');
         const poolDocs = state.doctors.filter(d => d.loc === 'pool');
         document.getElementById('pool-count').innerText = poolDocs.length;
@@ -301,7 +301,6 @@
             </div>
         `).join('');
 
-        // 渲染院区
         const renderZone = (areaId, containerId) => {
             const container = document.getElementById(containerId);
             const areaGroups = state.groups.filter(g => g.area === areaId);
@@ -330,7 +329,6 @@
         renderZone('other', 'area-other');
     }
 
-    // --- 业务逻辑 ---
     function openPicker(id) {
         state.activeId = id;
         const doc = state.doctors.find(d => d.id === id);
@@ -424,7 +422,6 @@
         closeExport();
     }
 
-    // 启动
     loadState(currentPlanId);
 </script>
 </body>
