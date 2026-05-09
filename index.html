@@ -2,17 +2,11 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <!-- 适配 iPhone 13 安全区和刘海 -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    
-    <!-- PWA 配置：让网页在 iOS 上像原生 App 一样 -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="医师排班">
-    
-    <!-- 桌面图标 (建议替换为实际图片 URL) -->
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3304/3304567.png">
-    
     <title>住院总排班管理</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -25,7 +19,7 @@
             margin: 0;
             padding: 0;
             background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
             -webkit-tap-highlight-color: transparent;
             height: 100vh;
             overflow: hidden;
@@ -33,10 +27,8 @@
         }
 
         .app-container {
-            /* 自动适配 iPhone 13 的刘海高度 */
             padding-top: calc(var(--safe-top) + 12px);
-            /* 自动适配 iPhone 13 的底部小白条 */
-            padding-bottom: calc(var(--safe-bottom) + 80px); 
+            padding-bottom: calc(var(--safe-bottom) + 140px); 
             height: 100%;
             display: flex;
             flex-direction: column;
@@ -61,33 +53,56 @@
         .doctor-tag {
             transition: transform 0.1s ease;
             user-select: none;
-            cursor: pointer;
         }
-        .doctor-tag:active {
-            transform: scale(0.92);
-            opacity: 0.8;
-        }
+        .doctor-tag:active { transform: scale(0.92); opacity: 0.8; }
 
         .rank-主任 { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
         .rank-副主任 { background: #ffedd5; color: #9a3412; border: 1px solid #fdba74; }
         .rank-主治 { background: #dbeafe; color: #1e40af; border: 1px solid #93c5fd; }
         .rank-住院 { background: #dcfce7; color: #166534; border: 1px solid #86efac; }
 
-        .tab-bar {
+        /* 底部双层面板 */
+        .bottom-panel {
             position: fixed;
             bottom: 0;
             left: 0;
             right: 0;
-            /* 增加底部安全区间距 */
-            height: calc(var(--safe-bottom) + 70px);
             background: rgba(255, 255, 255, 0.9);
             backdrop-filter: blur(20px);
             border-top: 1px solid #e2e8f0;
             padding-bottom: var(--safe-bottom);
+            z-index: 40;
+        }
+
+        .plan-bar {
+            display: flex;
+            padding: 10px 16px;
+            gap: 8px;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .tab-bar {
+            height: 70px;
             display: flex;
             justify-content: space-around;
             align-items: center;
-            z-index: 40;
+        }
+
+        .plan-btn {
+            flex: 1;
+            font-size: 11px;
+            font-weight: bold;
+            padding: 8px 0;
+            border-radius: 12px;
+            transition: all 0.2s;
+            border: 1px solid #e2e8f0;
+            color: #64748b;
+        }
+        .plan-btn.active {
+            background: #3b82f6;
+            color: white;
+            border-color: #3b82f6;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
         }
 
         @keyframes fadeInUp {
@@ -103,9 +118,9 @@
     <header class="px-6 mb-4 flex justify-between items-end">
         <div>
             <h1 class="text-2xl font-bold tracking-tight">医师排班</h1>
-            <p class="text-xs text-slate-500 font-medium">适配 iPhone 13 · 点击分配</p>
+            <p id="current-plan-title" class="text-xs text-blue-600 font-bold">当前方案：未保存方案</p>
         </div>
-        <div id="save-status" class="text-[10px] bg-emerald-100 text-emerald-600 px-2 py-0.5 rounded-full opacity-0 transition-opacity">已保存</div>
+        <div id="save-status" class="text-[10px] bg-emerald-100 text-emerald-600 px-2 py-0.5 rounded-full opacity-0 transition-opacity font-bold">已自动同步</div>
     </header>
 
     <div class="scroll-view no-scrollbar space-y-6">
@@ -114,98 +129,88 @@
                 <h2 class="text-xs font-bold text-slate-400 uppercase tracking-widest">待分配人员</h2>
                 <span id="pool-count" class="text-[10px] bg-slate-200 text-slate-600 px-2 py-0.5 rounded-full">0</span>
             </div>
-            <div id="doctor-pool" class="flex flex-wrap gap-2 min-h-[60px] p-2 bg-white/40 rounded-2xl border border-dashed border-slate-300">
-            </div>
+            <div id="doctor-pool" class="flex flex-wrap gap-2 min-h-[60px] p-2 bg-white/40 rounded-2xl border border-dashed border-slate-300"></div>
         </section>
 
         <section class="space-y-3">
             <h2 class="text-lg font-bold text-blue-900 flex items-center px-1">
                 <span class="w-1.5 h-5 bg-blue-500 rounded-full mr-2"></span>百里坊院区
             </h2>
-            <div id="area-bailifang" class="grid grid-cols-1 gap-3">
-            </div>
+            <div id="area-bailifang" class="grid grid-cols-1 gap-3"></div>
         </section>
 
         <section class="space-y-3">
             <h2 class="text-lg font-bold text-emerald-900 flex items-center px-1">
                 <span class="w-1.5 h-5 bg-emerald-500 rounded-full mr-2"></span>双屿院区
             </h2>
-            <div id="area-shuangyu" class="grid grid-cols-1 gap-3">
-            </div>
+            <div id="area-shuangyu" class="grid grid-cols-1 gap-3"></div>
         </section>
 
         <section class="space-y-3 pb-8">
             <h2 class="text-lg font-bold text-slate-700 flex items-center px-1">
                 <span class="w-1.5 h-5 bg-slate-400 rounded-full mr-2"></span>专项岗位
             </h2>
-            <div id="area-other" class="grid grid-cols-2 gap-3">
-            </div>
+            <div id="area-other" class="grid grid-cols-2 gap-3"></div>
         </section>
     </div>
 
-    <div class="tab-bar">
-        <button onclick="addNewGroup()" class="flex flex-col items-center">
-            <div class="w-10 h-10 flex items-center justify-center text-blue-600">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
-            </div>
-            <span class="text-[10px] font-bold text-slate-600">新增组</span>
-        </button>
-        <button onclick="addNewDoctor()" class="flex flex-col items-center">
-            <div class="w-10 h-10 flex items-center justify-center text-slate-600">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" x2="19" y1="8" y2="14"/><line x1="16" x2="22" y1="11" y2="11"/></svg>
-            </div>
-            <span class="text-[10px] font-bold text-slate-600">加医生</span>
-        </button>
-        <button onclick="showExportPreview()" class="flex flex-col items-center">
-            <div class="w-10 h-10 flex items-center justify-center text-indigo-600">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
-            </div>
-            <span class="text-[10px] font-bold text-slate-600">导出</span>
-        </button>
-        <button onclick="resetAll()" class="flex flex-col items-center">
-            <div class="w-10 h-10 flex items-center justify-center text-red-500">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
-            </div>
-            <span class="text-[10px] font-bold text-slate-600">重置</span>
-        </button>
+    <div class="bottom-panel">
+        <div class="plan-bar">
+            <button onclick="switchPlan(1)" id="btn-plan-1" class="plan-btn">方案一</button>
+            <button onclick="switchPlan(2)" id="btn-plan-2" class="plan-btn">方案二</button>
+            <button onclick="switchPlan(3)" id="btn-plan-3" class="plan-btn">方案三</button>
+            <button onclick="saveToCurrentPlan()" class="px-4 bg-slate-800 text-white rounded-xl text-[10px] font-bold active:scale-95 transition-transform">保存当前</button>
+        </div>
+        <div class="tab-bar">
+            <button onclick="addNewGroup()" class="flex flex-col items-center">
+                <div class="w-10 h-10 flex items-center justify-center text-blue-600"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg></div>
+                <span class="text-[10px] font-bold text-slate-600">新组</span>
+            </button>
+            <button onclick="addNewDoctor()" class="flex flex-col items-center">
+                <div class="w-10 h-10 flex items-center justify-center text-slate-600"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" x2="19" y1="8" y2="14"/><line x1="16" x2="22" y1="11" y2="11"/></svg></div>
+                <span class="text-[10px] font-bold text-slate-600">加人</span>
+            </button>
+            <button onclick="showExportPreview()" class="flex flex-col items-center">
+                <div class="w-10 h-10 flex items-center justify-center text-indigo-600"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="3" y2="15"/></svg></div>
+                <span class="text-[10px] font-bold text-slate-600">导出</span>
+            </button>
+            <button onclick="resetAll()" class="flex flex-col items-center">
+                <div class="w-10 h-10 flex items-center justify-center text-red-500"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg></div>
+                <span class="text-[10px] font-bold text-slate-600">重置</span>
+            </button>
+        </div>
     </div>
 </div>
 
-<!-- 分配选择器弹窗 -->
 <div id="picker-modal" class="fixed inset-0 bg-black/50 hidden z-50 flex items-end" onclick="closePicker()">
     <div class="w-full bg-white rounded-t-[32px] p-6 animate-up shadow-2xl" onclick="event.stopPropagation()">
         <div class="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mb-6"></div>
-        <div class="text-center mb-6">
-            <span class="text-slate-400 text-xs font-bold uppercase tracking-widest">分配至</span>
+        <div class="text-center mb-4">
+            <span class="text-slate-400 text-[10px] font-bold uppercase tracking-widest">分配至</span>
             <h3 id="picker-doctor-name" class="text-xl font-bold text-slate-800">医生姓名</h3>
         </div>
         <div id="picker-options" class="grid grid-cols-2 gap-3 max-h-[40vh] overflow-y-auto no-scrollbar pb-4"></div>
         <div class="space-y-2 mt-2 border-t border-slate-100 pt-4 pb-2">
-            <button onclick="moveTo('pool')" class="w-full py-3 text-slate-600 font-bold text-sm bg-slate-50 rounded-xl active:bg-slate-200">
-                回收至待分配池
-            </button>
-            <button onclick="deleteDoctor()" class="w-full py-3 text-red-500 font-bold text-sm active:bg-red-50">
-                永久删除该医生
-            </button>
+            <button onclick="moveTo('pool')" class="w-full py-3 text-slate-600 font-bold text-sm bg-slate-50 rounded-xl active:bg-slate-200">回收至待分配池</button>
+            <button onclick="deleteDoctor()" class="w-full py-3 text-red-500 font-bold text-sm active:bg-red-50">永久删除</button>
         </div>
-        <!-- 适配底部小白条 -->
         <div style="height: var(--safe-bottom);"></div>
     </div>
 </div>
 
-<!-- 导出预览弹窗 -->
 <div id="export-modal" class="fixed inset-0 bg-black/50 hidden z-50 flex items-center justify-center p-6" onclick="closeExport()">
     <div class="w-full max-w-md bg-white rounded-3xl p-6 shadow-2xl flex flex-col max-h-[80vh]" onclick="event.stopPropagation()">
         <h3 class="text-lg font-bold text-slate-800 mb-4 text-center">排班预览</h3>
-        <div id="export-content" class="flex-1 overflow-y-auto bg-slate-50 rounded-2xl p-4 text-sm font-mono whitespace-pre-wrap text-slate-700 border border-slate-100 leading-relaxed"></div>
+        <div id="export-content" class="flex-1 overflow-y-auto bg-slate-50 rounded-2xl p-4 text-xs font-mono whitespace-pre-wrap text-slate-700 leading-relaxed border border-slate-100"></div>
         <div class="mt-6 flex gap-3">
-            <button onclick="closeExport()" class="flex-1 py-3 bg-slate-100 text-slate-600 font-bold rounded-xl active:bg-slate-200">取消</button>
-            <button onclick="copyAndFinish()" class="flex-1 py-3 bg-blue-600 text-white font-bold rounded-xl shadow-lg shadow-blue-200 active:bg-blue-700">复制结果</button>
+            <button onclick="closeExport()" class="flex-1 py-3 bg-slate-100 text-slate-600 font-bold rounded-xl active:bg-slate-200">关闭</button>
+            <button onclick="copyAndFinish()" class="flex-1 py-3 bg-blue-600 text-white font-bold rounded-xl shadow-lg shadow-blue-200 active:bg-blue-700">复制</button>
         </div>
     </div>
 </div>
 
 <script>
+    // 基础数据
     const DEFAULT_DOCTORS = [
         { id: 1, name: '池琼', rank: '主任' }, { id: 2, name: '戴新建', rank: '主任' },
         { id: 3, name: '黄阳', rank: '副主任' }, { id: 4, name: '叶连萌', rank: '副主任' },
@@ -229,21 +234,64 @@
         { id: 'p4', name: '进修', area: 'other' }
     ];
 
+    // 初始化状态
+    let currentPlanId = localStorage.getItem('active_plan_id') || 1;
     let state = {
-        doctors: JSON.parse(localStorage.getItem('v3_docs')) || DEFAULT_DOCTORS.map(d => ({...d, loc: 'pool'})),
-        groups: JSON.parse(localStorage.getItem('v3_groups')) || DEFAULT_GROUPS,
+        doctors: [],
+        groups: [],
         activeId: null
     };
 
-    function save() {
-        localStorage.setItem('v3_docs', JSON.stringify(state.doctors));
-        localStorage.setItem('v3_groups', JSON.stringify(state.groups));
+    // 核心功能：加载方案
+    function loadState(planId) {
+        currentPlanId = planId;
+        localStorage.setItem('active_plan_id', planId);
+        
+        const savedDocs = localStorage.getItem(`plan_${planId}_docs`);
+        const savedGroups = localStorage.getItem(`plan_${planId}_groups`);
+
+        if (savedDocs && savedGroups) {
+            state.doctors = JSON.parse(savedDocs);
+            state.groups = JSON.parse(savedGroups);
+        } else {
+            // 初始默认数据
+            state.doctors = DEFAULT_DOCTORS.map(d => ({...d, loc: 'pool'}));
+            state.groups = [...DEFAULT_GROUPS];
+        }
+        
+        updateUI();
+    }
+
+    // 核心功能：保存方案
+    function saveToCurrentPlan() {
+        localStorage.setItem(`plan_${currentPlanId}_docs`, JSON.stringify(state.doctors));
+        localStorage.setItem(`plan_${currentPlanId}_groups`, JSON.stringify(state.groups));
+        
         const status = document.getElementById('save-status');
         status.style.opacity = '1';
         setTimeout(() => status.style.opacity = '0', 1000);
+        updateUI();
+    }
+
+    function switchPlan(id) {
+        if (confirm(`切换到方案 ${id}？当前未保存的改动将会丢失。`)) {
+            loadState(id);
+        }
+    }
+
+    function updateUI() {
+        // 更新方案按钮样式
+        [1,2,3].forEach(id => {
+            const btn = document.getElementById(`btn-plan-${id}`);
+            if (id == currentPlanId) btn.classList.add('active');
+            else btn.classList.remove('active');
+        });
+        document.getElementById('current-plan-title').innerText = `当前方案：方案 ${currentPlanId}`;
+        render();
     }
 
     function render() {
+        // 渲染待分配池
         const pool = document.getElementById('doctor-pool');
         const poolDocs = state.doctors.filter(d => d.loc === 'pool');
         document.getElementById('pool-count').innerText = poolDocs.length;
@@ -253,6 +301,7 @@
             </div>
         `).join('');
 
+        // 渲染院区
         const renderZone = (areaId, containerId) => {
             const container = document.getElementById(containerId);
             const areaGroups = state.groups.filter(g => g.area === areaId);
@@ -262,15 +311,14 @@
                     <div class="glass p-4 rounded-2xl shadow-sm">
                         <div class="flex justify-between items-center mb-3">
                             <span class="text-sm font-bold text-slate-700">${g.name}</span>
-                            ${areaId !== 'other' ? `<button onclick="deleteGroup('${g.id}')" class="text-[10px] text-slate-300">删除组</button>` : ''}
+                            ${areaId !== 'other' ? `<button onclick="deleteGroup('${g.id}')" class="text-[10px] text-slate-300">删除</button>` : ''}
                         </div>
-                        <div class="flex flex-wrap gap-2 min-h-[36px]">
+                        <div class="flex flex-wrap gap-2 min-h-[30px]">
                             ${members.map(m => `
                                 <div onclick="openPicker(${m.id})" class="doctor-tag rank-${m.rank} px-3 py-1.5 rounded-lg text-xs font-bold shadow-xs">
                                     ${m.name}
                                 </div>
                             `).join('')}
-                            ${members.length === 0 ? '<span class="text-slate-300 text-[10px] italic py-1.5">点击人员分配...</span>' : ''}
                         </div>
                     </div>
                 `;
@@ -282,10 +330,10 @@
         renderZone('other', 'area-other');
     }
 
+    // --- 业务逻辑 ---
     function openPicker(id) {
         state.activeId = id;
         const doc = state.doctors.find(d => d.id === id);
-        if (!doc) return;
         document.getElementById('picker-doctor-name').innerText = doc.name;
         const options = document.getElementById('picker-options');
         options.innerHTML = state.groups.map(g => `
@@ -302,95 +350,82 @@
         const doc = state.doctors.find(d => d.id === state.activeId);
         if (doc) {
             doc.loc = locId;
-            save();
             render();
             closePicker();
         }
     }
 
     function deleteDoctor() {
-        const doc = state.doctors.find(d => d.id === state.activeId);
-        if (doc && confirm(`确定要永久删除医生 [${doc.name}] 吗？`)) {
+        if (confirm("永久删除该医生？")) {
             state.doctors = state.doctors.filter(d => d.id !== state.activeId);
-            save();
             render();
             closePicker();
         }
     }
 
     function addNewDoctor() {
-        const name = prompt("请输入医生姓名:");
+        const name = prompt("姓名:");
         if (name) {
-            const rank = prompt("请输入职称 (主任/副主任/主治/住院):", "住院") || "住院";
+            const rank = prompt("职称(主任/副主任/主治/住院):", "住院") || "住院";
             state.doctors.push({ id: Date.now(), name, rank, loc: 'pool' });
-            save();
             render();
         }
     }
 
     function addNewGroup() {
-        const name = prompt("请输入新治疗组名称:");
+        const name = prompt("组名:");
         if (name) {
-            const area = confirm("点击 [确定] 加入百里坊，[取消] 加入双屿") ? 'bailifang' : 'shuangyu';
+            const area = confirm("点击[确定]百里坊, [取消]双屿") ? 'bailifang' : 'shuangyu';
             state.groups.push({ id: 'g' + Date.now(), name, area });
-            save();
             render();
         }
     }
 
     function deleteGroup(id) {
-        if (confirm("删除此组？组内人员将放回待分配池。")) {
+        if (confirm("删除此组并清空人员？")) {
             state.doctors.forEach(d => { if(d.loc === id) d.loc = 'pool' });
             state.groups = state.groups.filter(g => g.id !== id);
-            save();
             render();
         }
     }
 
     function resetAll() {
-        if (confirm("确定要重置并恢复默认名单吗？")) {
-            localStorage.clear();
-            location.reload();
+        if (confirm("清空当前方案所有数据？")) {
+            state.doctors = DEFAULT_DOCTORS.map(d => ({...d, loc: 'pool'}));
+            state.groups = [...DEFAULT_GROUPS];
+            render();
         }
     }
 
-    function generateReport() {
-        let text = "【呼吸科排班报告】\n";
-        const formatSection = (title, areaId) => {
-            let sectionText = `\n📍 ${title}\n`;
-            const areaGroups = state.groups.filter(g => g.area === areaId);
-            areaGroups.forEach(g => {
-                const members = state.doctors.filter(d => d.loc === g.id).map(m => m.name);
-                sectionText += `${g.name}：${members.length ? members.join('、') : '—'}\n`;
-            });
-            return sectionText;
-        };
-        text += formatSection("百里坊院区", "bailifang");
-        text += formatSection("双屿院区", "shuangyu");
-        text += formatSection("专项岗位", "other");
-        return text;
-    }
-
     function showExportPreview() {
-        document.getElementById('export-content').innerText = generateReport();
+        let t = `【呼吸科排班报告 - 方案${currentPlanId}】\n`;
+        const fmt = (title, aid) => {
+            let s = `\n📍 ${title}\n`;
+            state.groups.filter(g => g.area === aid).forEach(g => {
+                const m = state.doctors.filter(d => d.loc === g.id).map(m => m.name);
+                s += `${g.name}：${m.length ? m.join('、') : '—'}\n`;
+            });
+            return s;
+        };
+        t += fmt("百里坊院区", "bailifang") + fmt("双屿院区", "shuangyu") + fmt("专项岗位", "other");
+        document.getElementById('export-content').innerText = t;
         document.getElementById('export-modal').classList.remove('hidden');
     }
 
     function closeExport() { document.getElementById('export-modal').classList.add('hidden'); }
 
     function copyAndFinish() {
-        const text = document.getElementById('export-content').innerText;
-        const tempArea = document.createElement("textarea");
-        tempArea.value = text;
-        document.body.appendChild(tempArea);
-        tempArea.select();
+        const el = document.createElement("textarea");
+        el.value = document.getElementById('export-content').innerText;
+        document.body.appendChild(el); el.select();
         document.execCommand('copy');
-        document.body.removeChild(tempArea);
-        alert("已复制到剪贴板！");
+        document.body.removeChild(el);
+        alert("已复制！");
         closeExport();
     }
 
-    render();
+    // 启动
+    loadState(currentPlanId);
 </script>
 </body>
 </html>
